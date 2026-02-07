@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import { fetcher } from "@/lib/api";
@@ -21,7 +21,7 @@ interface Sheet {
     last_sync_status?: string;
 }
 
-export default function Dashboard() {
+function DashboardContent() {
     const searchParams = useSearchParams();
     const [showInstructions, setShowInstructions] = useState(false);
     const [importSheetId, setImportSheetId] = useState<string | null>(null);
@@ -127,5 +127,13 @@ export default function Dashboard() {
                 />
             </div>
         </div>
+    );
+}
+
+export default function Dashboard() {
+    return (
+        <Suspense fallback={<div className="flex justify-center p-20"><Spinner className="w-10 h-10 text-blue-600" /></div>}>
+            <DashboardContent />
+        </Suspense>
     );
 }
