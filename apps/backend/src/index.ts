@@ -5,13 +5,6 @@ if (result.error) {
   console.error('Error loading .env file:', result.error);
 }
 
-console.log('Dotenv loaded:', result.parsed);
-console.log('Current Env Vars:', {
-  DB_PASSWORD: process.env.DB_PASSWORD ? 'REDACTED' : 'MISSING',
-  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ? 'PRESENT' : 'MISSING',
-  GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI
-});
-
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { pool } from './db';
@@ -94,5 +87,5 @@ pool.getConnection()
   });
 
 app.listen(PORT, () => {
-  console.log(`Server running smoooothly on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

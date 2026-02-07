@@ -23,7 +23,3 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 export default router;
-
-// Also need to add sheet-specific logs to sheets.ts or here?
-// The requirement was "per sheet logs page".
-// I'll add `GET /sheets/:id/logs` in sheets.ts.
