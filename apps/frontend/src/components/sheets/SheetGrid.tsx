@@ -23,31 +23,14 @@ export function SheetGrid() {
     const sheetId = params.sheetId as string;
 
     const { data, error, isLoading, mutate: mutateRows } = useSWR<SheetData>(`/sheets/${sheetId}/rows`, fetcher, {
-        revalidateOnFocus: true,
-        revalidateOnReconnect: true,
+        revalidateOnFocus: false,
+        revalidateOnReconnect: false,
+        refreshInterval: 0, // Explicitly disable polling
         dedupingInterval: 2000,
     });
     const [isAddingRow, setIsAddingRow] = useState(false);
     const [deletingRowId, setDeletingRowId] = useState<number | null>(null);
 
-    // SSE Subscription for real-time updates
-    useEffect(() => {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-        const eventSource = new EventSource(`${API_URL}/events/${sheetId}`);
-
-        eventSource.onmessage = (event) => {
-            console.log('[SSE] Received update:', event.data);
-            mutateRows(); // Trigger re-fetch of grid data
-        };
-
-        eventSource.onerror = (err) => {
-            console.error('[SSE] Connection error:', err);
-        };
-
-        return () => {
-            eventSource.close();
-        };
-    }, [sheetId, mutateRows]);
 
     // Transform flat cells to map for O(1) access
     const cellMap = useMemo(() => {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/lib/auth";
+import Navbar from "@/components/Navbar";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sheet-Connect",
-  description: "Connect Google Sheets to your database",
+  title: "SheetConnect | Sync Google Sheets to Database",
+  description: "Connect Google Sheets to your database with real-time sync and audit logs",
 };
 
 export default function RootLayout({
@@ -27,10 +28,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-gray-50`}
       >
         <AuthProvider>
-          {children}
+          <Navbar />
+          <main className="pt-20">
+            {children}
+          </main>
           <Toaster position="top-right" richColors />
         </AuthProvider>
       </body>

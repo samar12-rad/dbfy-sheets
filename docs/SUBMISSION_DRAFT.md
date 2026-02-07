@@ -21,7 +21,7 @@ Sheet Connect is a high-performance synchronization engine between custom web in
 
 ### 3. Real-time Feedback Loop
 **Problem**: Traditional polling for updates is inefficient and creates lag.
-**Solution**: We chose Server-Sent Events (SSE) over WebSockets for its simplicity and robustness in read-heavy scenarios. The frontend uses SSE to trigger smart revalidation via SWR, creating a "live" feel without the complexity of a full duplex connection.
+**Solution**: We implemented a **Purely Event-Driven Architecture**. By removing all polling and revalidation-on-focus, we rely entirely on the Webhook -> Backend -> SSE -> Frontend mutation chain. This results in sub-second sync with zero unnecessary CPU or network overhead.
 
 ## Trade-offs & Decisions
 

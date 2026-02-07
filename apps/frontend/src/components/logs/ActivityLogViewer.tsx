@@ -10,7 +10,11 @@ interface ActivityLogViewerProps {
 
 export function ActivityLogViewer({ sheetId }: ActivityLogViewerProps) {
     const url = sheetId ? `/sheets/${sheetId}/logs` : '/logs';
-    const { data, error, isLoading } = useSWR<{ data: any[] }>(url, fetcher, { refreshInterval: 5000 }); // Auto refresh logs every 5s
+    const { data, error, isLoading } = useSWR<{ data: any[] }>(url, fetcher, {
+        revalidateOnFocus: false,
+        revalidateOnReconnect: false,
+        refreshInterval: 0
+    });
 
     if (error) return <div className="text-red-500 text-sm">Failed to load logs</div>;
     if (isLoading) return <div className="flex justify-center p-4"><Spinner className="w-4 h-4 text-gray-400" /></div>;

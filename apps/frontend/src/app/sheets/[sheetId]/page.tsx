@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
 import { fetcher } from '@/lib/api';
 import { useAuth } from '@/lib/auth'; // Protected
 import { SheetActions } from '@/components/sheets/SheetActions';
@@ -27,6 +27,28 @@ export default function SheetPage() {
         }
     }, [isAuthenticated, router]);
 
+    // Global re-fetch when SSE update arrives
+    const { mutate: globalMutate } = useSWRConfig();
+    useEffect(() => {
+        if (!sheetId) return;
+
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+        const eventSource = new EventSource(`${API_URL}/events/${sheetId}`);
+
+        eventSource.onmessage = (event) => {
+            console.log('[SSE] Global update received:', event.data);
+            // Re-fetch all SWR keys that match this sheet
+            globalMutate((key: any) => typeof key === 'string' && key.includes(`/sheets/${sheetId}`));
+        };
+
+        eventSource.onerror = (err) => {
+            console.error('[SSE] Global connection error:', err);
+        };
+
+        return () => {
+            eventSource.close();
+        };
+    }, [sheetId, globalMutate]);
     const { data, error, isLoading } = useSWR<{ data: { name: string } }>(sheetId ? `/sheets/${sheetId}` : null, fetcher);
 
     if (isLoading) return <div className="flex justify-center p-20"><Spinner className="w-10 h-10 text-blue-600" /></div>;

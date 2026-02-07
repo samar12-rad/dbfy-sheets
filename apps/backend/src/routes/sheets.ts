@@ -565,37 +565,32 @@ router.post('/:id/sync', async (req: Request, res: Response) => {
         for (const gRow of googleRows) {
             const [dbRows] = await connection.query<RowDataPacket[]>('SELECT id FROM sheet_rows WHERE sheet_id = ? AND row_index = ?', [sheetId, gRow.row_index]);
 
-            for (const gRow of googleRows) {
-                const [dbRows] = await connection.query<RowDataPacket[]>('SELECT id FROM sheet_rows WHERE sheet_id = ? AND row_index = ?', [sheetId, gRow.row_index]);
+            let rowId: number;
 
-                let rowId: number;
+            if (dbRows.length === 0) {
+                // New Row from Google -> Insert
+                const [r] = await connection.query<ResultSetHeader>('INSERT INTO sheet_rows (sheet_id, row_index) VALUES (?, ?)', [sheetId, gRow.row_index]);
+                rowId = r.insertId;
+                added++;
+            } else {
+                rowId = dbRows[0].id;
+            }
 
-                if (dbRows.length === 0) {
-                    // New Row from Google -> Insert
-                    const [r] = await connection.query<ResultSetHeader>('INSERT INTO sheet_rows (sheet_id, row_index) VALUES (?, ?)', [sheetId, gRow.row_index]);
-                    rowId = r.insertId;
-                    added++;
-                } else {
-                    rowId = dbRows[0].id;
-                }
+            // Sync Cells (Google Wins)
+            for (const [col, val] of Object.entries(gRow.cells)) {
+                // Check if cell exists and is different
+                const [cellRows] = await connection.query<RowDataPacket[]>('SELECT id, value FROM sheet_cells WHERE row_id = ? AND column_key = ?', [rowId, col]);
 
-                // Sync Cells (Google Wins)
-                for (const [col, val] of Object.entries(gRow.cells)) {
-                    // Check if cell exists and is different
-                    const [cellRows] = await connection.query<RowDataPacket[]>('SELECT id, value FROM sheet_cells WHERE row_id = ? AND column_key = ?', [rowId, col]);
-
-                    if (cellRows.length === 0) {
-                        // New Cell
-                        await connection.query('INSERT INTO sheet_cells (row_id, column_key, value) VALUES (?, ?, ?)', [rowId, col, val]);
-                        updated++; // Counting cell updates/inserts as updates
-                    } else if (cellRows[0].value !== val) {
-                        // Update existing cell
-                        await connection.query('UPDATE sheet_cells SET value = ? WHERE id = ?', [val, cellRows[0].id]);
-                        updated++;
-                    }
+                if (cellRows.length === 0) {
+                    // New Cell
+                    await connection.query('INSERT INTO sheet_cells (row_id, column_key, value) VALUES (?, ?, ?)', [rowId, col, val]);
+                    updated++;
+                } else if (cellRows[0].value !== val) {
+                    // Update existing cell
+                    await connection.query('UPDATE sheet_cells SET value = ? WHERE id = ?', [val, cellRows[0].id]);
+                    updated++;
                 }
             }
-            // Or ideally implementing detailed cell-level compare.
         }
 
         // 4. Log Activity

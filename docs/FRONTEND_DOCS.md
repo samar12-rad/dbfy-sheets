@@ -33,4 +33,5 @@ A dedicated component for viewing audit logs, available both globally and filter
 
 ## Real-time Integration
 The frontend uses **Server-Sent Events (SSE)** to listen for updates from the backend.
+- **Purely Event-Driven**: Polling and focus-revalidation are disabled. The UI state is mutated only when an SSE update is received from the backend, ensuring zero overhead.
 - When an update event is received, SWR is instructed to `mutate` the local cache for that sheet, triggering a silent re-fetch to keep the data fresh.

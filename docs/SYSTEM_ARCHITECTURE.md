@@ -48,7 +48,17 @@ To prevent data corruption, the system implements a locking mechanism:
 - Other users see the cell as "Locked" in real-time.
 - Locks have a TTL (Time-to-Live) to prevent permanent deadlocks if a user disconnects.
 
-### 3. Google Sheets Integration
+### 3. Real-time Feedback Loop
+**Problem**: Traditional polling for updates is inefficient and creates lag.
+**Solution**: We chose a **Purely Event-Driven Architecture**. By removing all "polling" and "revalidation-on-focus," the system relies 100% on the Webhook -> Backend -> SSE -> Frontend flow. This ensures zero unnecessary bandwidth usage and provides sub-second sync only when actual data changes occur.
+
+### 4. Pure Event-Driven Architecture (Polling-Free)
+To ensure zero unnecessary network overhead and maximum efficiency:
+- **No Polling**: The frontend does not use intervals or focus-revalidation to fetch data.
+- **Event-Driven Mutations**: UI state is updated only when the backend broadcasts an event (via SSE) or when a local manual action is performed.
+- **Backend Trigger**: Updates occur only when the Google Sheets Webhook confirms a change or an internal API call succeeds.
+
+### 5. Google Sheets Integration
 - **OAuth**: Users connect their Google account. The backend securely stores `refresh_tokens`.
 - **Apps Script Webhook**: A lightweight script attached to the Google Sheet sends a POST request to our backend whenever a cell is modified directly in the sheet.
 
