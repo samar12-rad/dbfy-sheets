@@ -1,35 +1,91 @@
-import Link from 'next/link';
+"use client";
+
+import useSWR from "swr";
+import { fetcher } from "@/lib/api";
+import { SheetCard } from "@/components/sheets/SheetCard";
+import { ConnectSheetDialog } from "@/components/sheets/ConnectSheetDialog";
+import { Spinner } from "@/components/ui/spinner";
+import { useAuth } from "@/lib/auth"; // Protected
+
+interface Sheet {
+    id: string;
+    name: string;
+    owner_id: string;
+    external_sheet_id: string;
+    status: "connected" | "error" | "syncing";
+    last_synced_at?: string;
+    last_sync_status?: string;
+}
 
 export default function Dashboard() {
+    const { data, error, isLoading, mutate } = useSWR<{ data: Sheet[] }>(
+        "/sheets",
+        fetcher
+    );
+
+    if (error) {
+        return (
+            <div className="p-8 text-center text-red-600">
+                Failed to load sheets. Please try refreshing.
+            </div>
+        );
+    }
+
     return (
-        <div className="p-8">
-            <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
-            <div className="mb-6">
-                <button className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                    Add New Sheet
-                </button>
-            </div>
-            <div className="grid gap-4">
-                <h2 className="text-xl font-semibold">Connected Sheets</h2>
-                {/* Mock Data */}
-                {[1, 2, 3].map((id) => (
-                    <div key={id} className="border p-4 rounded shadow">
-                        <h3 className="font-medium">Google Sheet {id}</h3>
-                        <div className="mt-2 space-x-2">
-                            <Link href={`/sheets/${id}`} className="text-blue-500 hover:underline">
-                                View Details
-                            </Link>
-                            <Link href={`/sheets/${id}/logs`} className="text-gray-500 hover:underline">
-                                View Logs
-                            </Link>
-                        </div>
+        <div className="min-h-screen bg-gray-50 p-8">
+            <div className="max-w-6xl mx-auto space-y-8">
+                <header className="flex justify-between items-center">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+                            Dashboard
+                        </h1>
+                        <p className="text-gray-500 mt-2">
+                            Manage your connected Google Sheets.
+                        </p>
                     </div>
-                ))}
-            </div>
-            <div className="mt-8">
-                <Link href="/logs" className="text-blue-600 hover:underline">
-                    View All Global Logs
-                </Link>
+                    <ConnectSheetDialog />
+                </header>
+
+                <main>
+                    {isLoading ? (
+                        <div className="flex justify-center py-20">
+                            <Spinner className="h-10 w-10 text-primary" />
+                        </div>
+                    ) : (
+                        <>
+                            {(!data?.data || data.data.length === 0) ? (
+                                <div className="text-center py-20 border-2 border-dashed rounded-lg bg-white">
+                                    <h3 className="text-lg font-medium text-gray-900">
+                                        No sheets connected
+                                    </h3>
+                                    <p className="text-gray-500 mt-2 mb-6">
+                                        Connect a Google Sheet to get started.
+                                    </p>
+                                    <ConnectSheetDialog />
+                                </div>
+                            ) : (
+                                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                                    {data.data.map((sheet) => (
+                                        <SheetCard
+                                            key={sheet.id}
+                                            id={sheet.id}
+                                            name={sheet.name || "Untitled Sheet"}
+                                            external_sheet_id={sheet.external_sheet_id}
+                                            status={
+                                                sheet.last_sync_status === "FAILED"
+                                                    ? "error"
+                                                    : sheet.external_sheet_id
+                                                        ? "connected"
+                                                        : "error"
+                                            }
+                                            last_synced_at={sheet.last_synced_at}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </>
+                    )}
+                </main>
             </div>
         </div>
     );
