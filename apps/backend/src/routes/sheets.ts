@@ -356,6 +356,62 @@ router.delete('/:id/rows/:rowId', async (req: Request, res: Response) => {
     }
 });
 
+// Delete Sheet
+router.delete('/:id', async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const sheetId = req.params.id;
+
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        // 1. Get Sheet info for logging (and LOCK)
+        const [rows] = await connection.query<RowDataPacket[]>(
+            'SELECT * FROM sheets WHERE id = ? AND owner_id = ? FOR UPDATE',
+            [sheetId, userId]
+        );
+
+        if (rows.length === 0) {
+            await connection.rollback();
+            res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Sheet not found' } });
+            return;
+        }
+
+        const oldSheetData = rows[0];
+
+        // 2. Delete Cells, Rows, and Sheet
+        // Assuming no automated cascade in DB for safety, we delete manually
+        await connection.query('DELETE FROM sheet_cells WHERE row_id IN (SELECT id FROM sheet_rows WHERE sheet_id = ?)', [sheetId]);
+        await connection.query('DELETE FROM sheet_rows WHERE sheet_id = ?', [sheetId]);
+        await connection.query('DELETE FROM sheets WHERE id = ?', [sheetId]);
+
+        // 3. Log Activity
+        await connection.query(
+            `INSERT INTO activity_logs 
+            (user_id, sheet_id, action_type, entity_type, entity_id, old_value) 
+            VALUES (?, ?, ?, ?, ?, ?)`,
+            [
+                userId,
+                sheetId,
+                'SHEET_DELETE',
+                'SHEET',
+                sheetId,
+                JSON.stringify({ name: oldSheetData.name, external_sheet_id: oldSheetData.external_sheet_id })
+            ]
+        );
+
+        await connection.commit();
+        res.json({ data: { id: sheetId, status: 'deleted' } });
+
+    } catch (error) {
+        await connection.rollback();
+        console.error('Delete sheet error:', error);
+        res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to delete sheet' } });
+    } finally {
+        connection.release();
+    }
+});
+
 
 // Get Sheet Logs
 router.get('/:id/logs', async (req: Request, res: Response) => {

@@ -33,37 +33,11 @@ export function SheetActions() {
         }
     };
 
-    // --- Sync (Same endpoint for now, or distinct if needed) ---
-    // Plan says "Import" and "Sync" use same endpoint or semantics.
-    // I will use handleImport for both but maybe different UI trigger.
-    // Actually, "Sync" usually implies pushing/pulling changes. "Import" implies overwriting.
-    // I'll keep them separate in UI but point to same logic if backend treats them same.
-
-    // For now, I'll alias Sync to Import logic but without warning dialog? 
-    // Or maybe Sync is "Pull latest". 
-    const handleSync = async () => {
-        setIsSyncing(true);
-        try {
-            const res = await api.post<{ stats: any }>(`/sheets/${sheetId}/sync`, {});
-            toast.success('Sync complete');
-            mutate(`/sheets/${sheetId}/rows`);
-            mutate(`/sheets/${sheetId}/logs`);
-        } catch (error: any) {
-            toast.error(error.message);
-        } finally {
-            setIsSyncing(false);
-        }
-    };
-
     return (
         <div className="flex gap-2 mb-4">
             <Button variant="outline" size="sm" onClick={() => setIsImportWarningOpen(true)}>
                 <Download className="w-4 h-4 mr-2" />
                 Import Data
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleSync} disabled={isSyncing}>
-                <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-                {isSyncing ? 'Syncing...' : 'Sync'}
             </Button>
 
             {/* Import Warning Dialog */}

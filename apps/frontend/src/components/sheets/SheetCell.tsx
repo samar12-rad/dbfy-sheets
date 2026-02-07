@@ -55,6 +55,7 @@ export function SheetCell({ rowId, columnKey, initialValue }: SheetCellProps) {
             toast.success(`Saved ${columnKey}${rowId}`);
             // Mutate to refresh data from server (Single Source of Truth)
             mutate(`/sheets/${sheetId}/rows`);
+            mutate(`/sheets/${sheetId}/logs`);
         } catch (error: any) {
             toast.error(`Failed to save: ${error.message}`);
             // Keep in edit mode? Or revert?

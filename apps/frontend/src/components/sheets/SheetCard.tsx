@@ -1,8 +1,13 @@
+import { useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileSpreadsheet, Activity } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FileSpreadsheet, Activity, Trash2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api";
+import { toast } from "sonner";
+import { mutate } from "swr";
 
 interface SheetCardProps {
     id: string;
@@ -13,24 +18,54 @@ interface SheetCardProps {
 }
 
 export function SheetCard({ id, name, external_sheet_id, status, last_synced_at }: SheetCardProps) {
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleDelete = async () => {
+        setIsDeleting(true);
+        try {
+            await api.delete(`/sheets/${id}`);
+            toast.success("Sheet deleted successfully");
+            mutate("/sheets");
+            setIsDeleteDialogOpen(false);
+        } catch (error: any) {
+            toast.error(error.message || "Failed to delete sheet");
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     return (
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="hover:shadow-md transition-shadow relative group">
             <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                     <CardTitle className="text-lg font-medium flex items-center gap-2">
                         <FileSpreadsheet className="h-5 w-5 text-green-600" />
                         {name || "Untitled Sheet"}
                     </CardTitle>
-                    <span
-                        className={cn(
-                            "px-2 py-0.5 rounded-full text-xs font-medium border",
-                            status === "connected" && "bg-green-50 text-green-700 border-green-200",
-                            status === "error" && "bg-red-50 text-red-700 border-red-200",
-                            status === "syncing" && "bg-blue-50 text-blue-700 border-blue-200"
-                        )}
-                    >
-                        {status}
-                    </span>
+                    <div className="flex items-center gap-2">
+                        <span
+                            className={cn(
+                                "px-2 py-0.5 rounded-full text-xs font-medium border",
+                                status === "connected" && "bg-green-50 text-green-700 border-green-200",
+                                status === "error" && "bg-red-50 text-red-700 border-red-200",
+                                status === "syncing" && "bg-blue-50 text-blue-700 border-blue-200"
+                            )}
+                        >
+                            {status}
+                        </span>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                setIsDeleteDialogOpen(true);
+                            }}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
             </CardHeader>
             <CardContent className="pb-2">
@@ -53,6 +88,42 @@ export function SheetCard({ id, name, external_sheet_id, status, last_synced_at 
                     </Link>
                 </Button>
             </CardFooter>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete dbfy-sheet</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete <span className="font-bold">"{name}"</span>?
+                            This will also delete all imported rows and audit logs. This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsDeleteDialogOpen(false)}
+                            disabled={isDeleting}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                "Delete Sheet"
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </Card>
     );
 }

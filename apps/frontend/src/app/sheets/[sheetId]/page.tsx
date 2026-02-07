@@ -66,9 +66,6 @@ export default function SheetPage() {
                     </Link>
                     <h1 className="text-xl font-bold">{data.data.name}</h1>
                 </div>
-                <div>
-                    <Button size="sm" variant="ghost" onClick={logout}>Logout</Button>
-                </div>
             </header>
 
             {/* Main Content */}

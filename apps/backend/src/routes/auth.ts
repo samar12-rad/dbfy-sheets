@@ -191,7 +191,7 @@ router.get('/google/callback', async (req: Request, res: Response) => {
             );
 
             await connection.commit();
-            res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard?status=success`);
+            res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard?status=success&sheetId=${result.insertId}`);
 
         } catch (dbError) {
             await connection.rollback();
