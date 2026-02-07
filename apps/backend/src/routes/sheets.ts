@@ -379,26 +379,31 @@ router.delete('/:id', async (req: Request, res: Response) => {
 
         const oldSheetData = rows[0];
 
-        // 2. Delete Cells, Rows, and Sheet
-        // Assuming no automated cascade in DB for safety, we delete manually
-        await connection.query('DELETE FROM sheet_cells WHERE row_id IN (SELECT id FROM sheet_rows WHERE sheet_id = ?)', [sheetId]);
-        await connection.query('DELETE FROM sheet_rows WHERE sheet_id = ?', [sheetId]);
-        await connection.query('DELETE FROM sheets WHERE id = ?', [sheetId]);
-
-        // 3. Log Activity
+        // 2. Log Activity (Use NULL for sheet_id column to avoid FK issues during deletion)
+        // We still keep the info in old_value and entity_id for records.
         await connection.query(
             `INSERT INTO activity_logs 
             (user_id, sheet_id, action_type, entity_type, entity_id, old_value) 
             VALUES (?, ?, ?, ?, ?, ?)`,
             [
                 userId,
-                sheetId,
+                null, // sheet_id (FK) set to NULL because parent is being deleted
                 'SHEET_DELETE',
                 'SHEET',
                 sheetId,
-                JSON.stringify({ name: oldSheetData.name, external_sheet_id: oldSheetData.external_sheet_id })
+                JSON.stringify({
+                    id: sheetId,
+                    name: oldSheetData.name,
+                    external_sheet_id: oldSheetData.external_sheet_id
+                })
             ]
         );
+
+        // 3. Delete Cells, Rows, and Sheet
+        // Assuming no automated cascade in DB for safety, we delete manually
+        await connection.query('DELETE FROM sheet_cells WHERE row_id IN (SELECT id FROM sheet_rows WHERE sheet_id = ?)', [sheetId]);
+        await connection.query('DELETE FROM sheet_rows WHERE sheet_id = ?', [sheetId]);
+        await connection.query('DELETE FROM sheets WHERE id = ?', [sheetId]);
 
         await connection.commit();
         res.json({ data: { id: sheetId, status: 'deleted' } });
