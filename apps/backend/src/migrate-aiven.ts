@@ -30,13 +30,13 @@ async function migrate() {
         await connection.execute(`
             CREATE TABLE IF NOT EXISTS sheets (
                 id INT AUTO_INCREMENT PRIMARY KEY,
-                user_id INT NOT NULL,
+                owner_id INT NOT NULL,
                 name VARCHAR(255) NOT NULL,
                 external_sheet_id VARCHAR(255),
                 sync_status ENUM('idle', 'syncing', 'error') DEFAULT 'idle',
                 last_synced_at TIMESTAMP NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
             )
         `);
         console.log('✓ Created sheets table');
