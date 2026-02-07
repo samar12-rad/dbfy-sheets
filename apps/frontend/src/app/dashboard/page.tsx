@@ -1,9 +1,12 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import { fetcher } from "@/lib/api";
 import { SheetCard } from "@/components/sheets/SheetCard";
 import { ConnectSheetDialog } from "@/components/sheets/ConnectSheetDialog";
+import { AppsScriptInstructionsDialog } from "@/components/sheets/AppsScriptInstructionsDialog";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/lib/auth"; // Protected
 
@@ -18,10 +21,23 @@ interface Sheet {
 }
 
 export default function Dashboard() {
+    const searchParams = useSearchParams();
+    const [showInstructions, setShowInstructions] = useState(false);
+
     const { data, error, isLoading, mutate } = useSWR<{ data: Sheet[] }>(
         "/sheets",
         fetcher
     );
+
+    useEffect(() => {
+        if (searchParams.get("status") === "success") {
+            setShowInstructions(true);
+            // Clean up the URL to prevent the dialog from showing again on refresh
+            const url = new URL(window.location.href);
+            url.searchParams.delete("status");
+            window.history.replaceState({}, "", url.pathname);
+        }
+    }, [searchParams]);
 
     if (error) {
         return (
@@ -86,6 +102,11 @@ export default function Dashboard() {
                         </>
                     )}
                 </main>
+
+                <AppsScriptInstructionsDialog
+                    open={showInstructions}
+                    onOpenChange={setShowInstructions}
+                />
             </div>
         </div>
     );
