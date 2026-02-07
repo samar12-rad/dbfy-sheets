@@ -15,6 +15,11 @@
   "exclude": [
     "node_modules",
     "dist",
-    "*.ts"
+    "*.ts",
+    "src/check-*.ts",
+    "src/debug-*.ts",
+    "src/test-*.ts",
+    "src/verify-*.ts",
+    "src/migrate-*.ts"
   ]
 }
