@@ -12,6 +12,7 @@ exports.pool = promise_1.default.createPool({
     user: "sheet_user",
     password: process.env.DB_PASSWORD,
     database: "sheetdb",
+    port: parseInt(process.env.DB_PORT || '3306'),
     waitForConnections: true,
     connectionLimit: 10
 });
